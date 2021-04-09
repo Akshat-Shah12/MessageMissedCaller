@@ -79,6 +79,8 @@ public class MainActivity extends AppCompatActivity {
     public void sendMessage(View view) {
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         Intent i = new Intent(this,TimedMessageReciever.class);
+        i.putExtra("number",number.getText().toString());
+        i.putExtra("message",message.getText().toString());
         PendingIntent pendingIntent = PendingIntent.getBroadcast(this,0,i,PendingIntent.FLAG_ONE_SHOT);
         alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,calendar1.getTimeInMillis(),pendingIntent);
     }
