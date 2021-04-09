@@ -1,14 +1,20 @@
 package com.example.messagingapp;
 
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
+import android.app.AlarmManager;
 import android.app.DatePickerDialog;
+import android.app.PendingIntent;
 import android.app.TimePickerDialog;
+import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.telephony.SmsManager;
@@ -22,6 +28,7 @@ import android.widget.TimePicker;
 import android.widget.Toast;
 
 import java.text.SimpleDateFormat;
+import java.time.Year;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
@@ -35,12 +42,15 @@ public class MainActivity extends AppCompatActivity {
     Calendar calendar=Calendar.getInstance();
     String DATE,TIME;
     boolean clicked=false;
+    Calendar calendar1;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         number = (EditText) findViewById(R.id.editTextNumber);
         message = (EditText) findViewById(R.id.editTextMessage);
+        calendar1=Calendar.getInstance();
+        calendar1.setTimeInMillis(System.currentTimeMillis());
         date1 = (TextView) findViewById(R.id.textView2);
         time1 = (TextView) findViewById(R.id.textView3);
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE)
@@ -65,35 +75,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     public void sendMessage(View view) {
-        SmsManager mySmsManager = SmsManager.getDefault();
-        String Number = number.getText().toString();
-        String Message = message.getText().toString();
-        final Handler handler;
-        Toast.makeText(this,DATE+" "+TIME,Toast.LENGTH_LONG).show();
-        handler = new Handler();
-        /*handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                mySmsManager.sendTextMessage(Number, null, Message, null, null);
-            }
-        }, 10000);*/
-        Timer t = new Timer();
-        t.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                int year1=calendar.get(Calendar.YEAR);
-                int month1=calendar.get(Calendar.MONTH);
-                int day1=calendar.get(Calendar.DAY_OF_MONTH);
-                String current_date = day1+"-" + (month1+1)+"-"+year1;
-                SimpleDateFormat format= new SimpleDateFormat("k:mm a");
-                String current_time = format.format(calendar.getTime());
-                if(current_date==DATE && current_time==TIME){
-                    mySmsManager.sendTextMessage(Number,null,Message,null,null);
-                    clicked=false;
-                }
-            }
-        },0,1000);
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        Intent i = new Intent(this,TimedMessageReciever.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this,0,i,PendingIntent.FLAG_ONE_SHOT);
+        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,calendar1.getTimeInMillis(),pendingIntent);
     }
 
 
@@ -108,6 +95,9 @@ public class MainActivity extends AppCompatActivity {
             public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
                 date1.setText(dayOfMonth+"-" + (month+1)+"-"+year);
                 DATE=dayOfMonth+"-" + (month+1)+"-"+year;
+                calendar1.set(Calendar.YEAR, year);
+                calendar1.set(Calendar.MONTH,month);
+                calendar1.set(Calendar.DAY_OF_MONTH,dayOfMonth);
             }
         },year1,month1,day1);
         datePickerDialog.show();
@@ -126,7 +116,12 @@ public class MainActivity extends AppCompatActivity {
                 SimpleDateFormat format= new SimpleDateFormat("k:mm a");
                 String time = format.format(c.getTime());
                 time1.setText(time);
+                calendar1.set(Calendar.HOUR_OF_DAY,hourOfDay);
+                calendar1.set(Calendar.MINUTE,minute);
+                calendar1.set(Calendar.SECOND,0);
+                calendar1.set(Calendar.MILLISECOND,0);
                 TIME=time;
+                Log.println(Log.ASSERT,"time",calendar1.getTimeInMillis()+"");
             }
         },hours ,mins,false);
         timePickerDialog.show();
